@@ -1,5 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 import random
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
 
 app = Flask(__name__)
 
@@ -56,7 +59,16 @@ def get_questions():
         "questions": questions
     }
 
+def mbti_predict(test_input):
+    global model, mbti_class
+    result = model.predict(np.array( [test_input,] ))
+    mbti = np.argmax(result, axis=-1)
+    return mbti_class[mbti[0]]
+
+
 q_dict = load_all_questions()
+mbti_class = ['istj', 'enfp', 'istp', 'enfj', 'isfj', 'entp', 'isfp', 'entj', 'intj', 'esfp', 'intp', 'esfj', 'infj', 'estp', 'infp', 'estj']
+model = keras.models.load_model('model')
 
 @app.route('/')
 def hello_world():
@@ -68,5 +80,6 @@ def questions():
 
 @app.route('/mbti', methods=['POST'])
 def mbti():
-    return get_questions()
+    content = request.json
+    return {"result": mbti_predict(content['ans'])}
 
